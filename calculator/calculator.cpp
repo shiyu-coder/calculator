@@ -37,11 +37,11 @@ void command_index(string index) {
 		break;
 	case 2:compute_fomula();
 		break;
-	case 3:
+	case 3:reverse_fomula();
 		break;
-	case 4:
+	case 4:division_fomula();
 		break;
-	case 5:
+	case 5:root_fomula();
 		break;
 	case 6:look_fomula();
 		break;
@@ -601,12 +601,116 @@ void reverse_fomula() {
 	for (map<string, deque<double>>::iterator it = fomulas->begin(); it != fomulas->end(); it++) {
 		cout << it->first << "\t";
 	}
+	cout << endl;
 	cout << "请选择：";
 	string name;
 	cin.clear();
 	cin.ignore(1024, '\n');
-	cin >> name;
+	getline(cin, name);
+	if (name.size() <= 0 || fomulas->find(name) == fomulas->end()) {
+		cout << "不存在此多项式！" << endl;
+		return;
+	}
+	deque<double> fo = fomulas->find(name)->second;
+	//检查是否可逆
+	if (abs(fo.at(0)) <= ACCURACY) {
+		cout << "此多项式不可逆！" << endl;
+		return ;
+	}
+	deque<double> re_fo;
+	//计算第一项
+	re_fo.push_back(1.0 / fo.at(0));
+	for (int i = 1; i < fo.size(); i++) {
+		double coe=0;
+		for (int j = 0; j <= i - 1; j++) {
+			coe = coe - re_fo.at(j) * (fo.at(i - j) / fo.at(0));
+		}
+		re_fo.push_back(coe);
+	}
+	//打印逆元
+	cout << "逆元为：" << name << "^-1 = ";
+	print_fomula(re_fo);
+}
 
+void division_fomula() {
+	cout << "请输入表达式(F/G)：";
+	string cmd;
+	cin.clear();
+	cin.ignore(1024, '\n');
+	getline(cin, cmd);
+	string F_str, G_str;
+	bool second = false;
+	//提取两个多项式
+	for (char c : cmd) {
+		if (c == '/') {
+			second = true;
+			continue;
+		}
+		if (second) {
+			G_str += c;
+		}
+		else {
+			F_str += c;
+		}
+	}
+	//检查两个多项式是否存在
+	deque<double> F, G;
+	auto f_it = fomulas->find(F_str);
+	if (f_it == fomulas->end()) {
+		cout <<"多项式 "<<F_str<<" 不存在！"<<endl;
+		return;
+	}
+	auto g_it = fomulas->find(G_str);
+	if (g_it == fomulas->end()) {
+		cout << "多项式 " << G_str << " 不存在！" << endl;
+		return;
+	}
+	F = f_it->second;
+	G = g_it->second;
+	//Fr(x)∗Gr(x)^−1 = Qr(x)(modx^(n−m + 1))
+	//求Fr(x)和Qr(x)
+	reverse(F.begin(), F.end());
+	reverse(G.begin(), G.end());
+	//求Gr(x)^-1，先弹出Gr(x)前的所有0
+	while (abs(G.at(0)) <= ACCURACY) {
+		G.pop_front();
+	}
+	deque<double> re_G;
+	re_G.push_back(1.0 / G.at(0));
+	for (int i = 1; i < G.size(); i++) {
+		double coe = 0;
+		for (int j = 0; j <= i - 1; j++) {
+			coe = coe - re_G.at(j) * (G.at(i - j) / G.at(0));
+		}
+		re_G.push_back(coe);
+	}
+	//求出Qr(x)
+	deque<double> Q;
+	Q = operation_mutiply(F, re_G);
+	//mod(x^(n-m+1))
+	int times = F.size() - G.size() + 1;
+	while (Q.size() > times) {
+		Q.pop_back();
+	}
+	reverse(Q.begin(), Q.end());
+	//求R(x)
+	//先把G和F反转回来
+	reverse(G.begin(), G.end());
+	reverse(F.begin(), F.end());
+	deque<double> Q_G = operation_mutiply(Q, G);
+	deque<double> R;
+	for (int i = 0; i < Q_G.size(); i++) {
+		R.push_back(F.at(i) - Q_G.at(i));
+	}
+	//去除R末尾的0项
+	while (R.size() > 0 && abs(R.at(R.size() - 1)) <= ACCURACY) {
+		R.pop_back();
+	}
+	//打印结果
+	cout << "商为：";
+	print_fomula(Q);
+	cout << "余数为：";
+	print_fomula(R);
 }
 
 deque<double> operation_mutiply(deque<double> f1, deque<double> f2) {
@@ -625,6 +729,35 @@ deque<double> operation_mutiply(deque<double> f1, deque<double> f2) {
 		}
 	}
 	return d;
+}
+
+void root_fomula() {
+	cout << "当前已储存的多项式有：" << endl;
+	for (map<string, deque<double>>::iterator it = fomulas->begin(); it != fomulas->end(); it++) {
+		cout << it->first << "\t";
+	}
+	cout << endl;
+	cout << "多项式名为：";
+	string name;
+	cin.clear();
+	cin.ignore(1024, '\n');
+	getline(cin, name);
+	auto it = fomulas->find(name);
+	if (it == fomulas->end()) {
+		cout << "不存在此多项式！" << endl;
+		return;
+	}
+	deque<double> fo = it->second;
+	deque<double> fo_d = operation_derivation(fo);
+	//精度
+	const double limit = 0.00001;
+	double x = 1;
+	double x0 = 0;
+	while (fabs(x - x0) > limit) {
+		x0 = x;
+		x = x0 - getValueAt(fo,x0) / getValueAt(fo_d,x0);
+	}
+	cout << name << " 的存在实数根为：" << x << endl;
 }
 
 vector<string> dividedByAdd(string cmd) {
@@ -696,6 +829,10 @@ void print_interface() {
 }
 
 void print_fomula(deque<double> fomula) {
+	if (fomula.size() <= 0) {
+		cout << "0" << endl;
+		return;
+	}
 	deque<double> coe = fomula;
 	bool firstNot0 = false;
 	//从大到小排列
