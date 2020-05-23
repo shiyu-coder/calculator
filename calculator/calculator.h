@@ -32,6 +32,8 @@ extern void reverse_fomula();
 extern void division_fomula();
 //求根
 extern void root_fomula();
+//作图
+extern void draw_fomula();
 ///////////////////////////////////////////////////////////////
 
 //打印界面
@@ -60,6 +62,8 @@ extern deque<double> operation_mutiply(deque<double> f1, deque<double> f2);
 extern deque<double> operation_derivation(deque<double> fomula);
 //积分运算
 extern double operation_integral(deque<double> fomula, double begin, double end);
+//绘制函数图像
+extern void draw_graph(deque<double> fomula);
 //计算多项式在某一点的值
 extern double getValueAt(deque<double> fomula, double key);
 //检查混合算式正确性

@@ -45,8 +45,91 @@ void command_index(string index) {
 		break;
 	case 6:look_fomula();
 		break;
+	case 7:draw_fomula();
+		break;
 	default:
 		cout << "不存在此功能！" << endl;
+	}
+}
+
+void draw_fomula() {
+	cout << "所有多项式名称：" << endl;
+	for (map<string, deque<double>>::iterator it = fomulas->begin(); it != fomulas->end(); it++) {
+		cout << it->first << "\t";
+	}
+	cout << endl;
+	cout << "要作图的多项式名为：";
+	cin.clear();
+	cin.ignore(1024, '\n');
+	string name;
+	cin >> name;
+	auto it = fomulas->find(name);
+	if (it == fomulas->end()) {
+		cout << "不存在此多项式！" << endl;
+		return;
+	}
+	draw_graph(it->second);
+}
+
+void draw_graph(deque<double> fomula) {
+	//暂定y轴上下高度为20
+	const double height = 20;
+	const double wide = 50;
+	//单位点之间的宽度
+	const double node_blank = 4;
+	//精度
+	double accuracy = 0.3;
+	double unit = 1;
+	double maxValue = -99999999;
+	vector<double> values;
+	for (int i = -wide; i <= wide; i++) {
+		double v = getValueAt(fomula, i);
+		if (v > maxValue) {
+			maxValue = v;
+		}
+		values.push_back(v);
+	}
+	//当大于3/2*height时就增加单位大小
+	while (maxValue/unit >=  height) {
+		unit = maxValue /  height+1;
+	}
+	accuracy = maxValue / (unit * 50);
+	cout << "x轴单位：" << node_blank << endl;
+	cout << "y轴单位：" << unit*node_blank << endl;
+	cout << "精度：" << accuracy << endl;
+	//更新和调整函数值
+	for (int i = 0; i < values.size(); i++) {
+		values[i] = 20 - values[i] / unit;
+	}
+	// i：y | j：x
+	for (int i = 1; i <= 2 * height; i++) {
+		for (int j = -wide; j < wide; j++) {
+			if (i == height) {
+				//画x轴
+				if (j % (int)node_blank == 0) {
+					cout << "+";
+				}
+				else {
+					cout << "-";
+				}
+			}
+			else if (j == 0) {
+				//画y轴
+				if (i % (int)node_blank == 0) {
+					cout << "+";
+				}
+				else {
+					cout << "|";
+				}
+			}
+			else if (abs(i - values.at(j + wide)) <= accuracy) {
+				cout << "*";
+			}
+			else {
+				cout << " ";
+			}
+		}
+		cout << endl;
 	}
 }
 
@@ -821,10 +904,10 @@ bool isSurByBrackets(string cmd) {
 }
 
 void print_interface() {
-	cout << "\t\t============================多项式计算器============================" << endl;
-	cout << "\t\t   1.输入  2.混合运算  3.求逆元  4.除法/取模运算  5.求根  6.查看" << endl;
-	cout << "\t\t====================================================================" << endl;
-	cout << "\t\t-------------------------输入 quit 退出程序-------------------------" << endl;
+	cout << "\t\t===============================多项式计算器==============================" << endl;
+	cout << "\t\t  1.输入  2.混合运算  3.求逆元  4.除法/取模运算  5.求根  6.查看  7.作图" << endl;
+	cout << "\t\t=========================================================================" << endl;
+	cout << "\t\t----------------------------输入 quit 退出程序---------------------------" << endl;
 	cout << "请选择：";
 }
 
