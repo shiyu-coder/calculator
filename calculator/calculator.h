@@ -63,7 +63,7 @@ extern deque<double> operation_derivation(deque<double> fomula);
 //积分运算
 extern double operation_integral(deque<double> fomula, double begin, double end);
 //绘制函数图像
-extern void draw_graph(deque<double> fomula);
+extern void draw_graph(deque<double> fomula, double zero_point);
 //计算多项式在某一点的值
 extern double getValueAt(deque<double> fomula, double key);
 //检查混合算式正确性

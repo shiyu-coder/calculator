@@ -68,13 +68,18 @@ void draw_fomula() {
 		cout << "不存在此多项式！" << endl;
 		return;
 	}
-	draw_graph(it->second);
+	cout << "作图原点x值为：";
+	double zero_point = 0;
+	cin.clear();
+	cin.ignore(1024, '\n');
+	cin >> zero_point;
+	draw_graph(it->second,zero_point);
 }
 
-void draw_graph(deque<double> fomula) {
+void draw_graph(deque<double> fomula, double zero_point) {
 	//暂定y轴上下高度为20
 	const double height = 20;
-	const double wide = 50;
+	const double wide = 55;
 	//单位点之间的宽度
 	const double node_blank = 4;
 	//精度
@@ -82,7 +87,7 @@ void draw_graph(deque<double> fomula) {
 	double unit = 1;
 	double maxValue = -99999999;
 	vector<double> values;
-	for (int i = -wide; i <= wide; i++) {
+	for (int i = zero_point-wide; i <= zero_point+wide; i++) {
 		double v = getValueAt(fomula, i);
 		if (v > maxValue) {
 			maxValue = v;
@@ -94,9 +99,13 @@ void draw_graph(deque<double> fomula) {
 		unit = maxValue /  height+1;
 	}
 	accuracy = maxValue / (unit * 50);
+	if (maxValue >= 1000) {
+		accuracy = accuracy + 0.1;
+	}
 	cout << "x轴单位：" << node_blank << endl;
 	cout << "y轴单位：" << unit*node_blank << endl;
 	cout << "精度：" << accuracy << endl;
+	//cout << "坐标原点x值：" << zero_point << endl;
 	//更新和调整函数值
 	for (int i = 0; i < values.size(); i++) {
 		values[i] = 20 - values[i] / unit;
