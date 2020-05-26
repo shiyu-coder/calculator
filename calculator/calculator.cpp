@@ -3,6 +3,7 @@
 #include <vector>
 #include <algorithm>
 #include <math.h>
+#include <sstream>
 using namespace std;
 //运行状态
 bool running = true;
@@ -46,6 +47,8 @@ void command_index(string index) {
 	case 6:look_fomula();
 		break;
 	case 7:draw_fomula();
+		break;
+	case 8:fitting_fomula();
 		break;
 	default:
 		cout << "不存在此功能！" << endl;
@@ -101,6 +104,9 @@ void draw_graph(deque<double> fomula, double zero_point) {
 	accuracy = maxValue / (unit * 50);
 	if (maxValue >= 1000) {
 		accuracy = accuracy + 0.1;
+	}
+	if (accuracy < 0.1) {
+		accuracy = 0.1;
 	}
 	cout << "x轴单位：" << node_blank << endl;
 	cout << "y轴单位：" << unit*node_blank << endl;
@@ -463,7 +469,7 @@ bool examCmd(string cmd) {
 		}
 		if (f_left) {
 			//在区间左侧只能是数字和一个'.'
-			if (cmd.at(i) >= '0' && cmd.at(i) <= '9') {
+			if (cmd.at(i) >= '0' && cmd.at(i) <= '9'||cmd.at(i)=='-') {
 				continue;
 			}
 			if (cmd.at(i) == '.' && !left_point) {
@@ -913,10 +919,10 @@ bool isSurByBrackets(string cmd) {
 }
 
 void print_interface() {
-	cout << "\t\t===============================多项式计算器==============================" << endl;
-	cout << "\t\t  1.输入  2.混合运算  3.求逆元  4.除法/取模运算  5.求根  6.查看  7.作图" << endl;
-	cout << "\t\t=========================================================================" << endl;
-	cout << "\t\t----------------------------输入 quit 退出程序---------------------------" << endl;
+	cout << "\t  ======================================多项式计算器=====================================" << endl;
+	cout << "\t    1.输入  2.混合运算  3.求逆元  4.除法/取模运算  5.求根  6.查看  7.作图  8.多项式拟合" << endl;
+	cout << "\t  =======================================================================================" << endl;
+	cout << "\t  -----------------------------------输入 quit 退出程序----------------------------------" << endl;
 	cout << "请选择：";
 }
 
@@ -931,7 +937,7 @@ void print_fomula(deque<double> fomula) {
 	reverse(coe.begin(), coe.end());
 	for (int i = 0; i < coe.size(); i++) {
 		//不显示系数为0的项
-		if (coe.at(i) == 0 && i + 1 != coe.size()) {
+		if (abs(coe.at(i))<=ACCURACY && coe.size()>1) {
 			continue;
 		}
 		if (fabs(coe.at(i)) > ACCURACY) {
@@ -1041,4 +1047,129 @@ double getValueAt(deque<double> fomula, double key) {
 		value = value + fomula.at(i) * pow(key, i);
 	}
 	return value;
+}
+
+double sum_fomula(deque<double> fomula, int n) {
+	double all = 0;
+	for (int i = 0; i < n; i++) {
+		all = all + fomula.at(i);
+	}
+	return all;
+}
+
+double sum_multi(deque<double> fo1, deque<double> fo2, int n) {
+	double all = 0;
+	for (int i = 0; i < n; i++) {
+		all = all + fo1.at(i) * fo2.at(i);
+	}
+	return all;
+}
+
+double sum_pow(deque<double> fomula, int n, int m) {
+	double all = 0;
+	for (int i = 0; i < n; i++) {
+		all = all + pow(fomula.at(i), m);
+	}
+	return all;
+}
+
+double sum_pow_multi(deque<double> fo1, deque<double> fo2, int n, int m) {
+	double all = 0;
+	for (int i = 0; i < n; i++) {
+		all = all + pow(fo1.at(i), m) * fo2.at(i);
+	}
+	return all;
+}
+
+deque<double> operation_polynomial_fitting(deque<double> fo1, deque<double> fo2, int n, int m) {
+	static double M[101][101] = { 0 };
+	//求增广矩阵
+	for (int i = 1; i <= m; i++) {
+		for (int j = 1; j <= m; j++) {
+			M[i][j] = sum_pow(fo1, n, i + j - 2);
+		}
+		M[i][m + 1] = sum_pow_multi(fo1, fo2, n, i - 1);
+	}
+	M[1][1] = n;
+	//求解方程组
+	for (int i = 1; i < m; i++) {
+		for (int j = i + 1; j < m + 1; j++) {
+			double p = 0;
+			if (M[i][i] != 0) {
+				p = M[j][i] / M[i][i];
+			}
+			for (int k = i; k < m + 2; k++) {
+				M[j][k] = M[j][k] - M[i][k] * p;
+			}
+		}
+	}
+	deque<double> coe;
+	coe.push_back(M[m][m + 1] / M[m][m]);
+	//求解系数
+	for (int i = m - 1; i >= 1; i--) {
+		coe.push_front((M[i][m + 1] - auxiliary_operation_polynomial_fitting(M, coe, i + 1, m)) / M[i][i]);
+	}
+	memset(M, 0, sizeof(M));
+	return coe;
+}
+
+double auxiliary_operation_polynomial_fitting(double M[][101], deque<double> coe, int l, int m) {
+	double all = 0;
+	for (int i= l; i <= m; i++) {
+		all = all + M[l - 1][i] * coe.at(i - l);
+	}
+	return all;
+}
+
+void fitting_fomula() {
+	cout << "输入要拟合的点的个数：";
+	cin.clear();
+	cin.ignore(1024, '\n');
+	int num=0;
+	cin >> num;
+	if (num <= 0) {
+		cout << "点的个数不合理！" << endl;
+		return;
+	}
+	cout << "输入要拟合的多项式的点的坐标（格式：x1 y1 x2 y2 ……)：" << endl;
+	cin.clear();
+	deque<double> dx;
+	deque<double> dy;
+	for (int i = 1; i <= 2 * num; i++) {
+		double input = 0;
+		cin >> input;
+		if (i % 2 == 0) {
+			dy.push_back(input);
+		}
+		else {
+			dx.push_back(input);
+		}
+	}
+	cout << "输入要拟合的多项式次数：";
+	cin.clear();
+	int m = 0;
+	cin >> m;
+	while (m+1 > dx.size()) {
+		cout << "多项式系数个数大于点的个数，无法进行拟合！" << endl;
+		cout << "输入要拟合的多项式次数：";
+		m = 0;
+		cin >> m;
+	}
+	//进行拟合
+	deque<double> fomula = operation_polynomial_fitting(dx, dy, dx.size(), m + 1);
+	string _name = "FIT";
+	int i = 0;
+	string name = "FIT";
+	while (fomulas->find(name) != fomulas->end()) {
+		i++;
+		stringstream ss;
+		ss << i;
+		string number = ss.str();
+		name.clear();
+		name = _name + number;
+	}
+	fomulas->insert(pair<string,deque<double>>(name,fomula));
+	cout << "多项式拟合结果（已自动储存该多项式）：" << endl;
+	cout << name << " = ";
+	print_fomula(fomula);
 }

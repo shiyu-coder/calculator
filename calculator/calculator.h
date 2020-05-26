@@ -34,6 +34,8 @@ extern void division_fomula();
 extern void root_fomula();
 //作图
 extern void draw_fomula();
+//多项式拟合
+extern void fitting_fomula();
 ///////////////////////////////////////////////////////////////
 
 //打印界面
@@ -74,3 +76,15 @@ extern vector<string> dividedByAdd(string cmd);
 extern vector<string> dividedByMutiply(string cmd);
 //检测是否是被括号包住的混合算式
 extern bool isSurByBrackets(string cmd);
+//计算deque<double>中值的累加
+extern double sum_fomula(deque<double> fomula,int n);
+//计算乘积和
+extern double sum_multi(deque<double> fo1, deque<double> fo2, int n);
+//计算次方和(m:次方数）
+extern double sum_pow(deque<double> fomula, int n, int m);
+//计算次方后再乘积和
+extern double sum_pow_multi(deque<double> fo1, deque<double> fo2, int n, int m);
+//多项式拟合运算，按次数从低到高排列返回系数
+extern deque<double> operation_polynomial_fitting(deque<double> fo1, deque<double> fo2, int n, int m);
+//被operation_polynomial_fitting函数调用的一个计算函数
+extern double auxiliary_operation_polynomial_fitting(double M[][101],deque<double> coe, int l, int m);
