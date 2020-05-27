@@ -117,6 +117,7 @@ void draw_graph(deque<double> fomula, double zero_point) {
 		values[i] = 20 - values[i] / unit;
 	}
 	// i：y | j：x
+	bool draw = true;
 	for (int i = 1; i <= 2 * height; i++) {
 		for (int j = -wide; j < wide; j++) {
 			if (i == height) {
@@ -137,11 +138,18 @@ void draw_graph(deque<double> fomula, double zero_point) {
 					cout << "|";
 				}
 			}
-			else if (abs(i - values.at(j + wide)) <= accuracy) {
+			/*else if (abs(i - values.at(j + wide)) <= accuracy) {
 				cout << "*";
+			}*/
+			else if (draw&&i < 2 * height && abs(i - values.at(j + wide)) < abs(i + 1 - values.at(j + wide))) {
+				cout << "*";
+				draw = false;
 			}
 			else {
 				cout << " ";
+				if (i < 2 * height && abs(i - values.at(j + wide)) > abs(i + 1 - values.at(j + wide))) {
+					draw = true;
+				}
 			}
 		}
 		cout << endl;
