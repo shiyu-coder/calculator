@@ -86,7 +86,7 @@ void draw_graph(deque<double> fomula, double zero_point) {
 	//单位点之间的宽度
 	const double node_blank = 4;
 	//精度
-	double accuracy = 0.3;
+	/*double accuracy = 0.3;*/
 	double unit = 1;
 	double maxValue = -99999999;
 	vector<double> values;
@@ -97,27 +97,30 @@ void draw_graph(deque<double> fomula, double zero_point) {
 		}
 		values.push_back(v);
 	}
-	//当大于3/2*height时就增加单位大小
+	//当大于height时就增加单位大小
 	while (maxValue/unit >=  height) {
 		unit = maxValue /  height+1;
 	}
-	accuracy = maxValue / (unit * 50);
-	if (maxValue >= 1000) {
-		accuracy = accuracy + 0.1;
-	}
-	if (accuracy < 0.1) {
-		accuracy = 0.1;
-	}
+	/*accuracy = maxValue / (unit * 50);*/
+// 	if (maxValue >= 1000) {
+// 		accuracy = accuracy + 0.1;
+// 	}
+// 	if (accuracy < 0.1) {
+// 		accuracy = 0.1;
+// 	}
 	cout << "x轴单位：" << node_blank << endl;
 	cout << "y轴单位：" << unit*node_blank << endl;
-	cout << "精度：" << accuracy << endl;
+	/*cout << "精度：" << accuracy << endl;*/
 	//cout << "坐标原点x值：" << zero_point << endl;
 	//更新和调整函数值
 	for (int i = 0; i < values.size(); i++) {
-		values[i] = 20 - values[i] / unit;
+		values[i] = height- values[i] / unit;
 	}
 	// i：y | j：x
-	bool draw = true;
+	bool* draw = new bool[(int)(2 * wide)];
+	for (int i = 1; i < 2 * wide; i++) {
+		draw[i] = true;
+	}
 	for (int i = 1; i <= 2 * height; i++) {
 		for (int j = -wide; j < wide; j++) {
 			if (i == height) {
@@ -127,6 +130,9 @@ void draw_graph(deque<double> fomula, double zero_point) {
 				}
 				else {
 					cout << "-";
+				}
+				if (draw[(int)(j + wide)] && i < 2 * height && abs(i - values.at(j + wide)) < abs((i * 1.0 + 1) - values.at(j + wide))) {
+					draw[(int)(j + wide)] = false;
 				}
 			}
 			else if (j == 0) {
@@ -141,14 +147,14 @@ void draw_graph(deque<double> fomula, double zero_point) {
 			/*else if (abs(i - values.at(j + wide)) <= accuracy) {
 				cout << "*";
 			}*/
-			else if (draw&&i < 2 * height && abs(i - values.at(j + wide)) < abs(i + 1 - values.at(j + wide))) {
+			else if (draw[(int)(j + wide)]&&i < 2 * height && abs(i - values.at(j + wide)) < abs((i*1.0 + 1) - values.at(j + wide))) {
 				cout << "*";
-				draw = false;
+				draw[(int)(j + wide)] = false;
 			}
 			else {
 				cout << " ";
-				if (i < 2 * height && abs(i - values.at(j + wide)) > abs(i + 1 - values.at(j + wide))) {
-					draw = true;
+				if (i < 2 * height && abs(i - values.at(j + wide)) > abs((i*1.0 + 1) - values.at(j + wide))) {
+					draw[(int)(j + wide)] = true;
 				}
 			}
 		}
@@ -494,7 +500,7 @@ bool examCmd(string cmd) {
 		}
 		if (f_right) {
 			//在区间右侧只能是数字和一个'.'
-			if (cmd.at(i) >= '0' && cmd.at(i) <= '9') {
+			if (cmd.at(i) >= '0' && cmd.at(i) <= '9' || cmd.at(i) == '-') {
 				continue;
 			}
 			if (cmd.at(i) == '.' && !right_point) {
@@ -535,10 +541,6 @@ bool examCmd(string cmd) {
 	int left_bra = 0, right_bra = 0;
 	for (char c : cmd) {
 		if (c == '(') {
-			if (bracket) {
-				cout << "括号内不能为空" << endl;
-				return false;
-			}
 			left_bra++;
 			bracket = true;
 		}
@@ -547,8 +549,8 @@ bool examCmd(string cmd) {
 				cout << "括号内不能为空" << endl;
 				return false;
 			}
+			bracket = false;
 			right_bra++;
-			bracket = true;
 		}
 		else {
 			bracket = false;
@@ -635,6 +637,7 @@ pair<double, double> split_integral(string *cmd) {
 			//开始读取多项式
 			fomula_start = count + 1;
 			timeForDouble = false;
+			break;
 		}
 		count++;
 		if (c == '[') {
@@ -777,6 +780,11 @@ void division_fomula() {
 	//求Fr(x)和Qr(x)
 	reverse(F.begin(), F.end());
 	reverse(G.begin(), G.end());
+	//被除多项式次数要不低于除多项式
+	if (F.size() < G.size()) {
+		cout << "被除多项式次数要不低于除多项式!" << endl;
+		return;
+	}
 	//求Gr(x)^-1，先弹出Gr(x)前的所有0
 	while (abs(G.at(0)) <= ACCURACY) {
 		G.pop_front();
@@ -859,7 +867,16 @@ void root_fomula() {
 	const double limit = 0.00001;
 	double x = 1;
 	double x0 = 0;
+	long int num = 0;
 	while (fabs(x - x0) > limit) {
+		num++;
+		if (num > 200) {
+			//如果进行200次循环后，x-x0仍然很大，则可以认为没有根
+			if (fabs(x - x0) > 0.1) {
+				cout << "此函数不存在函数值为0的根" << endl;
+				return;
+			}
+		}
 		x0 = x;
 		x = x0 - getValueAt(fo,x0) / getValueAt(fo_d,x0);
 	}
@@ -867,17 +884,17 @@ void root_fomula() {
 }
 
 vector<string> dividedByAdd(string cmd) {
-	bool countable = true;
+	int countable = 0;
 	vector<string> parts;
 	string piece;
 	for (char c : cmd) {
 		if (c == '(') {
-			countable = false;
+			countable++;
 		}
 		else if (c == ')') {
-			countable = true;
+			countable--;
 		}
-		if (countable&&c == '+') {
+		if (countable==0&&c == '+') {
 			if (piece.size() > 0) {
 				parts.push_back(piece);
 				piece.clear();
@@ -895,17 +912,17 @@ vector<string> dividedByAdd(string cmd) {
 }
 
 vector<string> dividedByMutiply(string cmd) {
-	bool countable = true;
+	int countable = 0;
 	vector<string> parts;
 	string piece;
 	for (char c : cmd) {
 		if (c == '(') {
-			countable = false;
+			countable ++;
 		}
 		else if (c == ')') {
-			countable = true;
+			countable --;
 		}
-		if (countable && c == '*') {
+		if (countable==0 && c == '*') {
 			if (piece.size() > 0) {
 				parts.push_back(piece);
 				piece.clear();

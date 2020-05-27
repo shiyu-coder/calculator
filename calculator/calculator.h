@@ -11,7 +11,7 @@ using namespace std;
  */
 
 //判断double类型变量相等的精度
-#define ACCURACY 0.00001
+#define ACCURACY 0.0000001
 
 //储存所有的多项式
 //多项式的系数从小到大排列
