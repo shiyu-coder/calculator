@@ -957,6 +957,10 @@ void print_fomula(deque<double> fomula) {
 		return;
 	}
 	deque<double> coe = fomula;
+	//从去掉为0的最高次项
+	while (fabs(coe.at(coe.size() - 1)) <= ACCURACY) {
+		coe.pop_back();
+	}
 	bool firstNot0 = false;
 	//从大到小排列
 	reverse(coe.begin(), coe.end());
