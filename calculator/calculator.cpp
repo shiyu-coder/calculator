@@ -180,10 +180,20 @@ void save_fomula() {
 	deque<double> coe;
 	cin.clear();
 	cin.ignore(1024, '\n');
-	for (int i = 1; i <= len; i++) {
+	int _len = len;
+	for (int i = 1; i <= _len; i++) {
 		double single_coe=0;
 		cin >> single_coe;
-		coe.push_front(single_coe);
+		if (cin.fail()) {
+			cin.clear();
+			char c;
+			cin >> c;
+			cout << "读取到无效字符：" << c <<" 跳过该字符，请补全剩余系数："<< endl;
+			_len++;
+		}
+		else {
+			coe.push_front(single_coe);
+		}
 	}
 	//输入名称
 	string name;
@@ -782,7 +792,17 @@ void division_fomula() {
 	reverse(G.begin(), G.end());
 	//被除多项式次数要不低于除多项式
 	if (F.size() < G.size()) {
-		cout << "被除多项式次数要不低于除多项式!" << endl;
+		cout << "商为：";
+		deque<double> Zero;
+		Zero.push_back(0);
+		print_fomula(Zero);
+		cout << "余数为：";
+		print_fomula(F);
+		return;
+	}
+	//被除式不能为0
+	if (G.size() == 1 && fabs(G.at(0)) <= ACCURACY) {
+		cout << "被除多项式不能为0！" << endl;
 		return;
 	}
 	//求Gr(x)^-1，先弹出Gr(x)前的所有0
@@ -868,17 +888,22 @@ void root_fomula() {
 	double x = 1;
 	double x0 = 0;
 	long int num = 0;
-	while (fabs(x - x0) > limit) {
+	while (fabs(x-x0) > limit|| fabs(getValueAt(fo, x))>limit) {
 		num++;
 		if (num > 200) {
 			//如果进行200次循环后，x-x0仍然很大，则可以认为没有根
-			if (fabs(x - x0) > 0.1) {
+			if (fabs(getValueAt(fo, x)) > 0.01) {
 				cout << "此函数不存在函数值为0的根" << endl;
 				return;
 			}
 		}
 		x0 = x;
-		x = x0 - getValueAt(fo,x0) / getValueAt(fo_d,x0);
+		double little = 0;
+		if (fabs(getValueAt(fo_d, x0)) <= ACCURACY) {
+			//如果导函数值为0，则加上一个小量
+			little = ACCURACY;
+		}
+		x = x0 - getValueAt(fo,x0) / (getValueAt(fo_d, x0)+little);
 	}
 	cout << name << " 的存在实数根为：" << x << endl;
 }
@@ -958,7 +983,7 @@ void print_fomula(deque<double> fomula) {
 	}
 	deque<double> coe = fomula;
 	//从去掉为0的最高次项
-	while (fabs(coe.at(coe.size() - 1)) <= ACCURACY) {
+	while (coe.size()>1&&fabs(coe.at(coe.size() - 1)) <= ACCURACY) {
 		coe.pop_back();
 	}
 	bool firstNot0 = false;
@@ -1160,7 +1185,7 @@ void fitting_fomula() {
 		cout << "点的个数不合理！" << endl;
 		return;
 	}
-	cout << "输入要拟合的多项式的点的坐标（格式：x1 y1 x2 y2 ……)：" << endl;
+	cout << "输入要拟合的多项式的点的坐标（不要输入重复的点）（格式：x1 y1 x2 y2 ……)：" << endl;
 	cin.clear();
 	deque<double> dx;
 	deque<double> dy;
@@ -1187,13 +1212,16 @@ void fitting_fomula() {
 	//进行拟合
 	deque<double> fomula = operation_polynomial_fitting(dx, dy, dx.size(), m + 1);
 	string _name = "FIT";
-	int i = 0;
+	char al[27] = "abcdefghijklmnopqrstuvwxyz";
+	int i = -1;
 	string name = "FIT";
 	while (fomulas->find(name) != fomulas->end()) {
 		i++;
-		stringstream ss;
-		ss << i;
-		string number = ss.str();
+		if (i == 25) {
+			cout << "拟合多项式个数超限，请重新运行本程序以清空已经存储的多项式" << endl;
+			return;
+		}
+		char number = al[i];
 		name.clear();
 		name = _name + number;
 	}
