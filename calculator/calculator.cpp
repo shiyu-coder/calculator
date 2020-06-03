@@ -773,7 +773,7 @@ void division_fomula() {
 		}
 	}
 	//检查两个多项式是否存在
-	deque<double> F, G;
+	deque<double> F, G, Q, R,_Q;
 	auto f_it = fomulas->find(F_str);
 	if (f_it == fomulas->end()) {
 		cout <<"多项式 "<<F_str<<" 不存在！"<<endl;
@@ -786,60 +786,75 @@ void division_fomula() {
 	}
 	F = f_it->second;
 	G = g_it->second;
-	//Fr(x)∗Gr(x)^−1 = Qr(x)(modx^(n−m + 1))
-	//求Fr(x)和Qr(x)
-	reverse(F.begin(), F.end());
-	reverse(G.begin(), G.end());
-	//被除多项式次数要不低于除多项式
-	if (F.size() < G.size()) {
-		cout << "商为：";
-		deque<double> Zero;
-		Zero.push_back(0);
-		print_fomula(Zero);
-		cout << "余数为：";
-		print_fomula(F);
-		return;
-	}
-	//被除式不能为0
-	if (G.size() == 1 && fabs(G.at(0)) <= ACCURACY) {
-		cout << "被除多项式不能为0！" << endl;
-		return;
-	}
-	//求Gr(x)^-1，先弹出Gr(x)前的所有0
-	while (abs(G.at(0)) <= ACCURACY) {
-		G.pop_front();
-	}
-	deque<double> re_G;
-	re_G.push_back(1.0 / G.at(0));
-	for (int i = 1; i < G.size(); i++) {
-		double coe = 0;
-		for (int j = 0; j <= i - 1; j++) {
-			coe = coe - re_G.at(j) * (G.at(i - j) / G.at(0));
+	bool isFirst = true;
+	while (R.size() == G.size()||isFirst) {
+		if (!isFirst) {
+			F.clear();
+			F = R;
+			R.clear();
+			_Q = Q;
+			Q.clear();
 		}
-		re_G.push_back(coe);
+		if (isFirst) {
+			isFirst = false;
+		}
+		//Fr(x)∗Gr(x)^−1 = Qr(x)(modx^(n−m + 1))
+		//求Fr(x)和Qr(x)
+		reverse(F.begin(), F.end());
+		reverse(G.begin(), G.end());
+		//被除多项式次数要不低于除多项式
+		if (F.size() < G.size()) {
+			cout << "商为：";
+			deque<double> Zero;
+			Zero.push_back(0);
+			print_fomula(Zero);
+			cout << "余数为：";
+			print_fomula(F);
+			return;
+		}
+		//被除式不能为0
+		if (G.size() == 1 && fabs(G.at(0)) <= ACCURACY) {
+			cout << "被除多项式不能为0！" << endl;
+			return;
+		}
+		//求Gr(x)^-1，先弹出Gr(x)前的所有0
+		while (abs(G.at(0)) <= ACCURACY) {
+			G.pop_front();
+		}
+		deque<double> re_G;
+		re_G.push_back(1.0 / G.at(0));
+		for (int i = 1; i < G.size(); i++) {
+			double coe = 0;
+			for (int j = 0; j <= i - 1; j++) {
+				coe = coe - re_G.at(j) * (G.at(i - j) / G.at(0));
+			}
+			re_G.push_back(coe);
+		}
+		//求出Qr(x)
+		Q = operation_mutiply(F, re_G);
+		//mod(x^(n-m+1))
+		int times = F.size() - G.size() + 1;
+		while (Q.size() > times) {
+			Q.pop_back();
+		}
+		reverse(Q.begin(), Q.end());
+		//求R(x)
+		//先把G和F反转回来
+		reverse(G.begin(), G.end());
+		reverse(F.begin(), F.end());
+		deque<double> Q_G = operation_mutiply(Q, G);
+		for (int i = 0; i < Q_G.size(); i++) {
+			R.push_back(F.at(i) - Q_G.at(i));
+		}
+		//去除R末尾的0项
+		while (R.size() > 0 && abs(R.at(R.size() - 1)) <= ACCURACY) {
+			R.pop_back();
+		}
+		if (!isFirst) {
+			Q = operation_add(Q, _Q);
+		}
 	}
-	//求出Qr(x)
-	deque<double> Q;
-	Q = operation_mutiply(F, re_G);
-	//mod(x^(n-m+1))
-	int times = F.size() - G.size() + 1;
-	while (Q.size() > times) {
-		Q.pop_back();
-	}
-	reverse(Q.begin(), Q.end());
-	//求R(x)
-	//先把G和F反转回来
-	reverse(G.begin(), G.end());
-	reverse(F.begin(), F.end());
-	deque<double> Q_G = operation_mutiply(Q, G);
-	deque<double> R;
-	for (int i = 0; i < Q_G.size(); i++) {
-		R.push_back(F.at(i) - Q_G.at(i));
-	}
-	//去除R末尾的0项
-	while (R.size() > 0 && abs(R.at(R.size() - 1)) <= ACCURACY) {
-		R.pop_back();
-	}
+	
 	//打印结果
 	cout << "商为：";
 	print_fomula(Q);
